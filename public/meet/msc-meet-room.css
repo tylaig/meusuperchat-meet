@@ -594,6 +594,11 @@ button, input, select, textarea {
   max-height: none;
   overflow-y: visible;
 }
+.msc-summary-agenda strong {
+  color: var(--text-primary);
+  display: block;
+  margin-bottom: 4px;
+}
 
 .msc-btn-join-primary {
   width: 100%;

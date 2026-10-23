@@ -40,7 +40,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/meet/msc-meet-room.css?v=20261023b" />
+  <link rel="stylesheet" href="/meet/msc-meet-room.css?v=20261023d" />
 </head>
 <body>
   <!-- ==================== EXECUTIVE HEADER ==================== -->
@@ -216,10 +216,8 @@
             <div class="msc-summary-val is-accent">LiveKit SFU Dedicado</div>
           </div>
         </div>
-        <div class="msc-summary-agenda">
-          <strong style="color: var(--text-primary); display: block; margin-bottom: 3px;">Pauta / Observações:</strong>
-          <%= summary[:notes] %>
-        </div>
+        <div class="msc-summary-agenda"><strong>Pauta / Observações:</strong>
+<%= summary[:notes] %></div>
       </div>
 
       <button type="button" class="msc-btn-join-primary" id="btn-join-room" onclick="window.MSCMeet.joinRoom()">
@@ -413,6 +411,6 @@
       initialState: <%= raw(meeting_state.to_json) %>
     };
   </script>
-  <script src="/meet/msc-meet-room.js?v=20261023b"></script>
+  <script src="/meet/msc-meet-room.js?v=20261023d"></script>
 </body>
 </html>
