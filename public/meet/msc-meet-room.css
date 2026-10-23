@@ -591,8 +591,8 @@ button, input, select, textarea {
   color: var(--text-secondary);
   line-height: 1.5;
   white-space: pre-line;
-  max-height: 96px;
-  overflow-y: auto;
+  max-height: none;
+  overflow-y: visible;
 }
 
 .msc-btn-join-primary {
