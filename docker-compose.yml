@@ -1,0 +1,279 @@
+version: "3.8"
+
+services:
+  livekit:
+    image: livekit/livekit-server:latest
+    command: --config /etc/livekit.yaml --node-ip 62.171.166.157
+    volumes:
+      - /opt/meusuperchat-meet/livekit.yaml:/etc/livekit.yaml:ro
+    ports:
+      - target: 7881
+        published: 7881
+        protocol: tcp
+        mode: host
+      - target: 50000
+        published: 50000
+        protocol: udp
+        mode: host
+      - target: 50001
+        published: 50001
+        protocol: udp
+        mode: host
+      - target: 50002
+        published: 50002
+        protocol: udp
+        mode: host
+      - target: 50003
+        published: 50003
+        protocol: udp
+        mode: host
+      - target: 50004
+        published: 50004
+        protocol: udp
+        mode: host
+      - target: 50005
+        published: 50005
+        protocol: udp
+        mode: host
+      - target: 50006
+        published: 50006
+        protocol: udp
+        mode: host
+      - target: 50007
+        published: 50007
+        protocol: udp
+        mode: host
+      - target: 50008
+        published: 50008
+        protocol: udp
+        mode: host
+      - target: 50009
+        published: 50009
+        protocol: udp
+        mode: host
+      - target: 50010
+        published: 50010
+        protocol: udp
+        mode: host
+      - target: 50011
+        published: 50011
+        protocol: udp
+        mode: host
+      - target: 50012
+        published: 50012
+        protocol: udp
+        mode: host
+      - target: 50013
+        published: 50013
+        protocol: udp
+        mode: host
+      - target: 50014
+        published: 50014
+        protocol: udp
+        mode: host
+      - target: 50015
+        published: 50015
+        protocol: udp
+        mode: host
+      - target: 50016
+        published: 50016
+        protocol: udp
+        mode: host
+      - target: 50017
+        published: 50017
+        protocol: udp
+        mode: host
+      - target: 50018
+        published: 50018
+        protocol: udp
+        mode: host
+      - target: 50019
+        published: 50019
+        protocol: udp
+        mode: host
+      - target: 50020
+        published: 50020
+        protocol: udp
+        mode: host
+      - target: 50021
+        published: 50021
+        protocol: udp
+        mode: host
+      - target: 50022
+        published: 50022
+        protocol: udp
+        mode: host
+      - target: 50023
+        published: 50023
+        protocol: udp
+        mode: host
+      - target: 50024
+        published: 50024
+        protocol: udp
+        mode: host
+      - target: 50025
+        published: 50025
+        protocol: udp
+        mode: host
+      - target: 50026
+        published: 50026
+        protocol: udp
+        mode: host
+      - target: 50027
+        published: 50027
+        protocol: udp
+        mode: host
+      - target: 50028
+        published: 50028
+        protocol: udp
+        mode: host
+      - target: 50029
+        published: 50029
+        protocol: udp
+        mode: host
+      - target: 50030
+        published: 50030
+        protocol: udp
+        mode: host
+      - target: 50031
+        published: 50031
+        protocol: udp
+        mode: host
+      - target: 50032
+        published: 50032
+        protocol: udp
+        mode: host
+      - target: 50033
+        published: 50033
+        protocol: udp
+        mode: host
+      - target: 50034
+        published: 50034
+        protocol: udp
+        mode: host
+      - target: 50035
+        published: 50035
+        protocol: udp
+        mode: host
+      - target: 50036
+        published: 50036
+        protocol: udp
+        mode: host
+      - target: 50037
+        published: 50037
+        protocol: udp
+        mode: host
+      - target: 50038
+        published: 50038
+        protocol: udp
+        mode: host
+      - target: 50039
+        published: 50039
+        protocol: udp
+        mode: host
+      - target: 50040
+        published: 50040
+        protocol: udp
+        mode: host
+      - target: 50041
+        published: 50041
+        protocol: udp
+        mode: host
+      - target: 50042
+        published: 50042
+        protocol: udp
+        mode: host
+      - target: 50043
+        published: 50043
+        protocol: udp
+        mode: host
+      - target: 50044
+        published: 50044
+        protocol: udp
+        mode: host
+      - target: 50045
+        published: 50045
+        protocol: udp
+        mode: host
+      - target: 50046
+        published: 50046
+        protocol: udp
+        mode: host
+      - target: 50047
+        published: 50047
+        protocol: udp
+        mode: host
+      - target: 50048
+        published: 50048
+        protocol: udp
+        mode: host
+      - target: 50049
+        published: 50049
+        protocol: udp
+        mode: host
+      - target: 50050
+        published: 50050
+        protocol: udp
+        mode: host
+      - target: 50051
+        published: 50051
+        protocol: udp
+        mode: host
+      - target: 50052
+        published: 50052
+        protocol: udp
+        mode: host
+      - target: 50053
+        published: 50053
+        protocol: udp
+        mode: host
+      - target: 50054
+        published: 50054
+        protocol: udp
+        mode: host
+      - target: 50055
+        published: 50055
+        protocol: udp
+        mode: host
+      - target: 50056
+        published: 50056
+        protocol: udp
+        mode: host
+      - target: 50057
+        published: 50057
+        protocol: udp
+        mode: host
+      - target: 50058
+        published: 50058
+        protocol: udp
+        mode: host
+      - target: 50059
+        published: 50059
+        protocol: udp
+        mode: host
+      - target: 50060
+        published: 50060
+        protocol: udp
+        mode: host
+    networks:
+      - LiptRede
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      update_config:
+        parallelism: 1
+        order: stop-first
+      labels:
+        - "traefik.enable=true"
+        - "traefik.swarm.network=LiptRede"
+        - "traefik.http.routers.livekit.rule=Host(`livekit.62.171.166.157.sslip.io`)"
+        - "traefik.http.routers.livekit.entrypoints=websecure"
+        - "traefik.http.routers.livekit.tls=true"
+        - "traefik.http.routers.livekit.tls.certresolver=letsencryptresolver"
+        - "traefik.http.routers.livekit.service=livekit"
+        - "traefik.http.services.livekit.loadbalancer.server.port=7880"
+
+networks:
+  LiptRede:
+    external: true

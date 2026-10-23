@@ -1,0 +1,418 @@
+<%
+  brand_name = (@global_config && @global_config['BRAND_NAME'].presence) || 'Meu Super Chat'
+  summary = @appointment ? {
+    uid: @appointment.uid,
+    title: @appointment.title.presence || 'Sessão Executiva Meu Super Chat',
+    host_name: @appointment.calendar_schedule&.name.presence || 'Especialista Meu Super Chat',
+    host_role: @appointment.calendar_schedule&.role_title.presence || 'Anfitrião Executivo',
+    customer_name: @appointment.customer_name.presence || 'Participante Convidado',
+    date_formatted: @appointment.starts_at.in_time_zone(@appointment.timezone.presence || 'America/Sao_Paulo').strftime('%d/%m/%Y'),
+    time_range: "#{@appointment.starts_at.in_time_zone(@appointment.timezone.presence || 'America/Sao_Paulo').strftime('%H:%M')} — #{@appointment.ends_at.in_time_zone(@appointment.timezone.presence || 'America/Sao_Paulo').strftime('%H:%M')}",
+    duration_minutes: @appointment.duration_minutes || 45,
+    timezone: @appointment.timezone.presence || 'America/Sao_Paulo',
+    status: @appointment.status || 'confirmed',
+    notes: @appointment.notes.presence || 'Alinhamento estratégico de operação, fluxos omnichannel, IA e próximos passos.'
+  } : {
+    uid: @room_uid,
+    title: 'Sala Executiva Meu Super Chat',
+    host_name: 'Equipe Meu Super Chat',
+    host_role: 'Especialista / Anfitrião',
+    customer_name: 'Participante Convidado',
+    date_formatted: Time.current.in_time_zone('America/Sao_Paulo').strftime('%d/%m/%Y'),
+    time_range: "#{Time.current.in_time_zone('America/Sao_Paulo').strftime('%H:%M')} — #{(Time.current.in_time_zone('America/Sao_Paulo') + 45.minutes).strftime('%H:%M')}",
+    duration_minutes: 45,
+    timezone: 'America/Sao_Paulo',
+    status: 'confirmed',
+    notes: 'Sessão executiva dedicada de áudio, vídeo HD e colaboração em tempo real.'
+  }
+  initial_role = params[:role].to_s.downcase == 'host' ? 'host' : 'guest'
+  initial_name = params[:name].to_s.strip.presence || (initial_role == 'host' ? summary[:host_name] : summary[:customer_name])
+  initials = initial_name.split(/\s+/).first(2).map { |w| w[0] }.join.upcase.presence || 'MS'
+  meeting_state = @meeting_state || { 'shared_notes' => '', 'agenda_items' => [], 'chat_messages' => [] }
+%>
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <title><%= summary[:title] %> • Sala Executiva | <%= brand_name %></title>
+  <link rel="icon" type="image/svg+xml" href="/brand-assets/logo_thumbnail.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/meet/msc-meet-room.css?v=20261023" />
+</head>
+<body>
+  <!-- ==================== EXECUTIVE HEADER ==================== -->
+  <header class="msc-header" role="banner">
+    <div class="msc-header-left">
+      <a href="/agendar" class="msc-brand" title="<%= brand_name %>">
+        <span class="msc-brand-mark">
+          <img src="/brand-assets/logo_thumbnail.svg" alt="<%= brand_name %>" />
+        </span>
+        <span class="msc-brand-text">
+          <span class="msc-brand-name"><%= brand_name %></span>
+          <span class="msc-brand-sub">Meet Engine • WebRTC SFU</span>
+        </span>
+      </a>
+      <span class="msc-header-divider" aria-hidden="true"></span>
+      <div class="msc-meeting-meta">
+        <h1 class="msc-meeting-title"><%= summary[:title] %></h1>
+        <span class="msc-e2ee-badge" title="Criptografia TLS 1.3 + SRTP em tempo real">
+          <span class="msc-pulse-dot"></span>
+          <span id="header-room-badge">SALA #<%= @room_uid.to_s[0, 18] %> • TLS 1.3 SRTP</span>
+        </span>
+      </div>
+    </div>
+
+    <div class="msc-header-center">
+      <div class="msc-telemetry-pill" title="Qualidade da conexão WebRTC SFU">
+        <span class="msc-net-bars" aria-hidden="true">
+          <span></span><span></span><span></span><span></span>
+        </span>
+        <span id="telemetry-status">SFU Pronto</span>
+      </div>
+      <div class="msc-telemetry-pill" title="Cronômetro da sessão">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span id="meeting-timer">00:00</span>
+      </div>
+    </div>
+
+    <div class="msc-header-actions">
+      <button type="button" class="msc-btn-action" id="btn-copy-invite" onclick="window.MSCMeet.copyInviteLink()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        <span>Copiar Link</span>
+      </button>
+      <a href="https://wa.me/55131998710945?text=<%= ERB::Util.url_encode("Olá! Preciso de suporte na Sala Executiva Meu Super Chat (#{@room_uid}).") %>" target="_blank" rel="noopener noreferrer" class="msc-btn-action msc-btn-whatsapp">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        <span>Suporte WhatsApp</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- ==================== STAGE 1: GREEN ROOM LOBBY ==================== -->
+  <main id="stage-lobby" class="msc-lobby" role="main">
+    <!-- Left Card: Hardware Preview & Audio/Video Controls -->
+    <section class="msc-card" aria-label="Pré-visualização de câmera e áudio">
+      <div class="msc-preview-frame">
+        <span class="msc-preview-status-pill" id="preview-status-pill">
+          <span class="msc-pulse-dot"></span>
+          <span id="preview-status-text">Verificando câmera e microfone...</span>
+        </span>
+
+        <video id="lobby-video-preview" autoplay playsinline muted></video>
+
+        <div id="lobby-preview-fallback" class="msc-preview-fallback">
+          <div class="msc-avatar-ring" id="lobby-avatar-initials"><%= initials %></div>
+          <div style="max-width: 340px;">
+            <div style="font-size: 15px; font-weight: 700; margin-bottom: 4px;" id="preview-fallback-title">Modo Áudio / Avatar Executivo Ativo</div>
+            <div style="font-size: 12.5px; color: var(--text-muted); line-height: 1.45;" id="preview-fallback-sub">
+              Sua câmera está desativada ou indisponível neste dispositivo. Você pode entrar normalmente com áudio ou ativar a câmera a qualquer momento.
+            </div>
+          </div>
+          <div class="msc-wave-bars" id="lobby-wave-bars" aria-hidden="true">
+            <span></span><span></span><span></span><span></span><span></span>
+          </div>
+        </div>
+
+        <div class="msc-preview-quick-toggles">
+          <button type="button" class="msc-media-toggle" id="btn-lobby-mic" onclick="window.MSCMeet.toggleLobbyMic()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            <span id="label-lobby-mic">Microfone Ativo</span>
+          </button>
+          <button type="button" class="msc-media-toggle" id="btn-lobby-cam" onclick="window.MSCMeet.toggleLobbyCam()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+            <span id="label-lobby-cam">Câmera Ativa</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="msc-audio-meter-row">
+        <span class="msc-meter-label">Nível do Microfone</span>
+        <div class="msc-meter-track" role="progressbar" aria-label="Medidor de nível de microfone" aria-valuemin="0" aria-valuemax="100">
+          <div class="msc-meter-fill" id="lobby-mic-meter"></div>
+        </div>
+        <span class="msc-meter-label" id="lobby-mic-db" style="font-family: 'JetBrains Mono', monospace; color: var(--emerald);">Pronto</span>
+      </div>
+
+      <div class="msc-device-grid">
+        <div class="msc-field">
+          <label class="msc-label" for="select-audio-input">Microfone</label>
+          <select id="select-audio-input" class="msc-select" onchange="window.MSCMeet.switchLobbyDevice()">
+            <option value="">Microfone Padrão do Sistema</option>
+          </select>
+        </div>
+        <div class="msc-field">
+          <label class="msc-label" for="select-video-input">Câmera de Vídeo</label>
+          <select id="select-video-input" class="msc-select" onchange="window.MSCMeet.switchLobbyDevice()">
+            <option value="">Câmera Padrão HD</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Card: Participant Credentials, Booking Summary & Join Action -->
+    <section class="msc-card" aria-label="Configuração de acesso à reunião">
+      <div class="msc-join-header">
+        <span class="msc-kicker">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Sala Oficial Verificada
+        </span>
+        <h2 class="msc-join-title">Pronto para ingressar?</h2>
+        <p class="msc-join-desc">Confirme seu nome e perfil de acesso para conectar-se ao servidor de mídia dedicada Meu Super Chat.</p>
+      </div>
+
+      <div class="msc-field" style="margin-bottom: 14px;">
+        <label class="msc-label" for="input-participant-name">Seu Nome na Sala</label>
+        <input
+          id="input-participant-name"
+          type="text"
+          class="msc-input"
+          value="<%= initial_name %>"
+          placeholder="Digite seu nome completo..."
+          maxlength="80"
+          oninput="window.MSCMeet.updateAvatarInitials(this.value)"
+        />
+      </div>
+
+      <div class="msc-field">
+        <span class="msc-label">Perfil na Sessão</span>
+        <div class="msc-role-selector" role="radiogroup" aria-label="Perfil na sessão">
+          <button
+            type="button"
+            class="msc-role-btn <%= initial_role == 'guest' ? 'is-active' : '' %>"
+            id="role-btn-guest"
+            onclick="window.MSCMeet.selectRole('guest')"
+          >
+            <span>👤 Participante / Cliente</span>
+          </button>
+          <button
+            type="button"
+            class="msc-role-btn <%= initial_role == 'host' ? 'is-active' : '' %>"
+            id="role-btn-host"
+            onclick="window.MSCMeet.selectRole('host')"
+          >
+            <span>⚡ Especialista / Host</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="msc-booking-summary">
+        <div class="msc-summary-grid">
+          <div class="msc-summary-item">
+            <div class="msc-summary-key">Anfitrião</div>
+            <div class="msc-summary-val"><%= summary[:host_name] %></div>
+          </div>
+          <div class="msc-summary-item">
+            <div class="msc-summary-key">Data e Horário</div>
+            <div class="msc-summary-val is-accent"><%= summary[:date_formatted] %> • <%= summary[:time_range] %></div>
+          </div>
+          <div class="msc-summary-item">
+            <div class="msc-summary-key">Duração Prevista</div>
+            <div class="msc-summary-val"><%= summary[:duration_minutes] %> minutos</div>
+          </div>
+          <div class="msc-summary-item">
+            <div class="msc-summary-key">Motor WebRTC</div>
+            <div class="msc-summary-val is-accent">LiveKit SFU Dedicado</div>
+          </div>
+        </div>
+        <div class="msc-summary-agenda">
+          <strong style="color: var(--text-primary); display: block; margin-bottom: 3px;">Pauta / Observações:</strong>
+          <%= summary[:notes] %>
+        </div>
+      </div>
+
+      <button type="button" class="msc-btn-join-primary" id="btn-join-room" onclick="window.MSCMeet.joinRoom()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        <span id="btn-join-label">Entrar na Sala Executiva Agora</span>
+      </button>
+
+      <p class="msc-lobby-footnote">
+        Conexão direta via WebRTC SFU com baixa latência, compartilhamento de tela em HD, notas colaborativas e chat persistente.
+      </p>
+    </section>
+  </main>
+
+  <!-- ==================== STAGE 2: ACTIVE CONFERENCE ROOM ==================== -->
+  <section id="stage-conference" class="msc-conference" aria-label="Sala de conferência ativa">
+    <div class="msc-stage-area">
+      <div class="msc-stage-toolbar">
+        <div class="msc-room-live-pill">
+          <span class="msc-pulse-dot"></span>
+          <span id="live-participants-counter">1 participante online</span>
+        </div>
+
+        <div class="msc-layout-pills" role="group" aria-label="Modo de visualização">
+          <button type="button" class="msc-layout-btn is-active" id="btn-layout-grid" onclick="window.MSCMeet.setLayout('grid')">
+            Grade Automática
+          </button>
+          <button type="button" class="msc-layout-btn" id="btn-layout-spotlight" onclick="window.MSCMeet.setLayout('spotlight')">
+            Destaque / Apresentação
+          </button>
+        </div>
+      </div>
+
+      <div id="video-grid" class="msc-video-grid" data-count="1"></div>
+      <div id="reactions-layer" class="msc-reactions-layer" aria-hidden="true"></div>
+
+      <!-- Floating Control Dock -->
+      <div class="msc-dock-wrap">
+        <div id="reactions-popover" class="msc-reactions-popover" role="menu" aria-label="Enviar reação">
+          <button type="button" class="msc-react-choice" onclick="window.MSCMeet.sendReaction('👏')">👏</button>
+          <button type="button" class="msc-react-choice" onclick="window.MSCMeet.sendReaction('🔥')">🔥</button>
+          <button type="button" class="msc-react-choice" onclick="window.MSCMeet.sendReaction('🚀')">🚀</button>
+          <button type="button" class="msc-react-choice" onclick="window.MSCMeet.sendReaction('✅')">✅</button>
+          <button type="button" class="msc-react-choice" onclick="window.MSCMeet.sendReaction('💡')">💡</button>
+          <button type="button" class="msc-react-choice" onclick="window.MSCMeet.sendReaction('❤️')">❤️</button>
+        </div>
+
+        <nav class="msc-dock" aria-label="Controles da chamada">
+          <button type="button" class="msc-dock-btn" id="dock-btn-mic" onclick="window.MSCMeet.toggleRoomMic()" title="Ativar/Desativar Microfone">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+            <span class="btn-label" id="dock-label-mic">Áudio</span>
+          </button>
+
+          <button type="button" class="msc-dock-btn" id="dock-btn-cam" onclick="window.MSCMeet.toggleRoomCam()" title="Ativar/Desativar Câmera">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+            <span class="btn-label" id="dock-label-cam">Vídeo</span>
+          </button>
+
+          <button type="button" class="msc-dock-btn" id="dock-btn-screen" onclick="window.MSCMeet.toggleScreenShare()" title="Compartilhar Tela">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            <span class="btn-label">Tela</span>
+          </button>
+
+          <button type="button" class="msc-dock-btn" id="dock-btn-hand" onclick="window.MSCMeet.toggleRaiseHand()" title="Levantar a Mão">
+            <span style="font-size: 16px;">✋</span>
+            <span class="btn-label">Mão</span>
+          </button>
+
+          <button type="button" class="msc-dock-btn" id="dock-btn-react" onclick="window.MSCMeet.toggleReactionsMenu()" title="Reações ao Vivo">
+            <span style="font-size: 16px;">✨</span>
+            <span class="btn-label">Reagir</span>
+          </button>
+
+          <button type="button" class="msc-dock-btn" id="dock-btn-chat" onclick="window.MSCMeet.openDrawer('chat')" title="Chat da Sala">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span class="btn-label">Chat</span>
+            <span id="chat-unread-dot" class="msc-unread-dot"></span>
+          </button>
+
+          <button type="button" class="msc-dock-btn" id="dock-btn-notes" onclick="window.MSCMeet.openDrawer('notes')" title="Pauta e Notas Colaborativas">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span class="btn-label">Pauta & Notas</span>
+          </button>
+
+          <button type="button" class="msc-dock-btn" id="dock-btn-participants" onclick="window.MSCMeet.openDrawer('participants')" title="Participantes">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span class="btn-label" id="dock-label-participants">1</span>
+          </button>
+
+          <button type="button" class="msc-dock-btn is-leave" id="dock-btn-leave" onclick="window.MSCMeet.leaveRoom()" title="Encerrar / Sair da Sala">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><line x1="23" y1="1" x2="1" y2="23"/></svg>
+            <span class="btn-label">Sair</span>
+          </button>
+        </nav>
+      </div>
+    </div>
+
+    <!-- Side Collaboration Drawer -->
+    <aside id="room-drawer" class="msc-drawer is-open" aria-label="Painel lateral da sala">
+      <div class="msc-drawer-header">
+        <div class="msc-drawer-top">
+          <span class="msc-drawer-title">Central de Colaboração</span>
+          <button type="button" class="msc-drawer-close" onclick="window.MSCMeet.closeDrawer()" aria-label="Fechar painel lateral">✕</button>
+        </div>
+        <div class="msc-drawer-tabs" role="tablist">
+          <button type="button" class="msc-tab-btn is-active" id="tab-btn-chat" onclick="window.MSCMeet.switchTab('chat')">Chat ao Vivo</button>
+          <button type="button" class="msc-tab-btn" id="tab-btn-notes" onclick="window.MSCMeet.switchTab('notes')">Pauta & Notas</button>
+          <button type="button" class="msc-tab-btn" id="tab-btn-participants" onclick="window.MSCMeet.switchTab('participants')">Pessoas (<span id="tab-participants-count">1</span>)</button>
+        </div>
+      </div>
+
+      <!-- Tab 1: Live Chat -->
+      <div id="tab-panel-chat" class="msc-tab-panel is-active" role="tabpanel">
+        <div id="chat-messages-list" class="msc-chat-list"></div>
+        <form class="msc-chat-form" onsubmit="window.MSCMeet.submitChatMessage(event)">
+          <input
+            type="text"
+            id="chat-input"
+            class="msc-input"
+            placeholder="Escreva uma mensagem na sala..."
+            maxlength="1000"
+            autocomplete="off"
+          />
+          <button type="submit" class="msc-btn-send">Enviar</button>
+        </form>
+      </div>
+
+      <!-- Tab 2: Collaborative Agenda & Notes -->
+      <div id="tab-panel-notes" class="msc-tab-panel" role="tabpanel">
+        <div class="msc-notes-wrap">
+          <div>
+            <div class="msc-label" style="margin-bottom: 8px;">Checklist da Reunião</div>
+            <div id="agenda-checklist" class="msc-agenda-checklist"></div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; flex: 1; gap: 6px;">
+            <label class="msc-label" for="shared-notes-textarea">Ata / Notas Compartilhadas em Tempo Real</label>
+            <textarea
+              id="shared-notes-textarea"
+              class="msc-notes-textarea"
+              placeholder="Registre decisões, próximos passos e links importantes desta reunião..."
+            ><%= meeting_state['shared_notes'] %></textarea>
+          </div>
+
+          <div class="msc-notes-footer">
+            <span class="msc-save-status" id="notes-save-status">Sincronizado na sala</span>
+            <button type="button" class="msc-btn-save-notes" onclick="window.MSCMeet.saveNotesAndAgenda(true)">
+              Salvar Ata Agora
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Participants -->
+      <div id="tab-panel-participants" class="msc-tab-panel" role="tabpanel">
+        <div id="participants-list" class="msc-participants-list"></div>
+      </div>
+    </aside>
+  </section>
+
+  <!-- ==================== STAGE 3: POST-MEETING SUMMARY ==================== -->
+  <section id="stage-ended" class="msc-ended" aria-label="Reunião finalizada">
+    <div class="msc-ended-card">
+      <div class="msc-avatar-ring" style="margin: 0 auto 18px; width: 72px; height: 72px; font-size: 28px;">✓</div>
+      <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 8px;">Sessão Executiva Encerrada</h2>
+      <p style="font-size: 14px; color: var(--text-muted); line-height: 1.55;">
+        Obrigado por utilizar a sala de videoconferência oficial do <strong><%= brand_name %></strong>. As notas e o histórico da pauta permanecem salvos nesta sala.
+      </p>
+      <div class="msc-ended-actions">
+        <button type="button" class="msc-btn-join-primary" style="width: auto;" onclick="window.MSCMeet.rejoinFromEnded()">
+          Voltar para a Sala
+        </button>
+        <a href="/agendar" class="msc-btn-action">Novo Agendamento</a>
+      </div>
+    </div>
+  </section>
+
+  <div id="msc-toast" class="msc-toast" role="status" aria-live="polite"></div>
+
+  <!-- LiveKit Client SDK (Local Static Asset served by Nginx) -->
+  <script src="/meet/livekit-client.umd.min.js"></script>
+  <script>
+    window.MSC_MEET_CONFIG = {
+      roomUid: <%= raw(@room_uid.to_json) %>,
+      wsUrl: <%= raw(@livekit_ws_url.to_json) %>,
+      initialRole: <%= raw(initial_role.to_json) %>,
+      initialName: <%= raw(initial_name.to_json) %>,
+      tokenEndpoint: <%= raw("/public/api/v1/meetings/#{ERB::Util.url_encode(@room_uid)}/token".to_json) %>,
+      stateEndpoint: <%= raw("/public/api/v1/meetings/#{ERB::Util.url_encode(@room_uid)}/state".to_json) %>,
+      notesEndpoint: <%= raw("/public/api/v1/meetings/#{ERB::Util.url_encode(@room_uid)}/notes".to_json) %>,
+      chatEndpoint: <%= raw("/public/api/v1/meetings/#{ERB::Util.url_encode(@room_uid)}/chat".to_json) %>,
+      initialState: <%= raw(meeting_state.to_json) %>
+    };
+  </script>
+  <script src="/meet/msc-meet-room.js?v=20261023"></script>
+</body>
+</html>

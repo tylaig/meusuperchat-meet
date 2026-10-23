@@ -1,0 +1,25 @@
+port: 7880
+bind_addresses:
+  - "0.0.0.0"
+
+rtc:
+  tcp_port: 7881
+  port_range_start: 50000
+  port_range_end: 50060
+  use_external_ip: true
+  node_ip: 62.171.166.157
+  allow_tcp_fallback: true
+
+redis:
+  address: meusuperchat_redis:6379
+
+keys:
+  APIPiGFpvpQVvFg: ${LIVEKIT_API_SECRET}
+
+room:
+  auto_create: true
+  empty_timeout: 600
+  max_participants: 64
+
+logging:
+  level: info
