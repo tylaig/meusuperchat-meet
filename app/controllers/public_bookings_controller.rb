@@ -8,7 +8,7 @@ class PublicBookingsController < ActionController::Base
 
   LIVEKIT_WS_URL_DEFAULT = 'wss://livekit.62.171.166.157.sslip.io'
   LIVEKIT_API_KEY_DEFAULT = 'APIPiGFpvpQVvFg'
-  LIVEKIT_API_SECRET_DEFAULT = ENV.fetch('LIVEKIT_API_SECRET', 'configure-me')
+  LIVEKIT_API_SECRET_DEFAULT = 'oosMCJfnEfi8ecLxiih5xzatxgcyaWRcfgr1bubsrfVB'
   MEETING_STATE_TTL_SECONDS = 14 * 24 * 3600
 
   # GET /agendar/:slug
@@ -318,7 +318,7 @@ class PublicBookingsController < ActionController::Base
     sanitized = ActiveRecord::Base.sanitize_sql_like(clean)
     CalendarAppointment
       .includes(:calendar_schedule, :appointment_type, :account)
-      .where('meeting_url LIKE ? OR meeting_url LIKE ?', "%/reuniao/#{sanitized}", "%/agendar/sala/#{sanitized}")
+      .where('meeting_url LIKE ? OR meeting_url LIKE ? OR meeting_url LIKE ?', "%/#{sanitized}", "%/reuniao/#{sanitized}", "%/agendar/sala/#{sanitized}")
       .order(id: :desc)
       .first
   end

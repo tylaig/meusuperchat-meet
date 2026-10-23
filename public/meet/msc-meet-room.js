@@ -78,7 +78,8 @@
   }
 
   function copyInviteLink() {
-    var url = window.location.origin + '/reuniao/' + encodeURIComponent(CFG.roomUid || 'sala-executiva');
+    var baseMeet = (window.location.hostname.indexOf('meet.') === 0) ? window.location.origin : 'https://meet.meusuper.app';
+    var url = baseMeet + '/' + encodeURIComponent(CFG.roomUid || 'sala-executiva');
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(url).then(function () {
         showToast('Link da sala copiado para a área de transferência!');
