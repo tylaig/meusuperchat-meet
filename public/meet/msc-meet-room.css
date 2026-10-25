@@ -26,6 +26,31 @@
   --radius-md: 14px;
   --radius-lg: 20px;
   --radius-xl: 24px;
+  --page-glow-1: rgba(16, 185, 129, 0.12);
+  --page-glow-2: rgba(198, 255, 0, 0.06);
+  --header-bg: rgba(4, 9, 13, 0.9);
+  --card-shadow: rgba(0, 0, 0, 0.55);
+}
+
+:root[data-theme="light"] {
+  --bg-obsidian: #F3F7F7;
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #EAF1F1;
+  --bg-glass: rgba(255, 255, 255, 0.9);
+  --border-subtle: #D7E2E2;
+  --border-strong: #B8CCCC;
+  --emerald: #047857;
+  --emerald-dark: #065F46;
+  --emerald-glow: rgba(4, 120, 87, 0.18);
+  --volt: #3F6212;
+  --volt-soft: rgba(63, 98, 18, 0.1);
+  --text-primary: #102326;
+  --text-secondary: #334E52;
+  --text-muted: #60777A;
+  --page-glow-1: rgba(16, 185, 129, 0.1);
+  --page-glow-2: rgba(6, 182, 212, 0.08);
+  --header-bg: rgba(255, 255, 255, 0.92);
+  --card-shadow: rgba(15, 45, 48, 0.14);
 }
 
 html, body {
@@ -35,8 +60,8 @@ html, body {
   overflow-x: hidden;
   background-color: var(--bg-obsidian);
   background-image:
-    radial-gradient(circle at 18% 0%, rgba(16, 185, 129, 0.12) 0%, transparent 45%),
-    radial-gradient(circle at 85% 5%, rgba(198, 255, 0, 0.06) 0%, transparent 38%);
+    radial-gradient(circle at 18% 0%, var(--page-glow-1) 0%, transparent 45%),
+    radial-gradient(circle at 85% 5%, var(--page-glow-2) 0%, transparent 38%);
   color: var(--text-primary);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -58,7 +83,7 @@ button, input, select, textarea {
   top: 0;
   z-index: 40;
   width: 100%;
-  background: rgba(4, 9, 13, 0.9);
+  background: var(--header-bg);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border-subtle);
   padding: 10px 20px;
@@ -276,7 +301,7 @@ button, input, select, textarea {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xl);
   padding: 24px;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 24px 64px var(--card-shadow);
   min-width: 0;
 }
 
@@ -647,7 +672,7 @@ button, input, select, textarea {
   height: calc(100vh - 66px);
   min-height: 520px;
   overflow: hidden;
-  background: #03070B;
+  background: var(--bg-obsidian);
 }
 
 .msc-conference.is-active {
@@ -660,7 +685,7 @@ button, input, select, textarea {
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 14px 16px 96px;
+  padding: 14px 16px;
   position: relative;
 }
 
@@ -722,6 +747,9 @@ button, input, select, textarea {
   gap: 12px;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   align-content: stretch;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1px 3px 8px 1px;
 }
 
 .msc-video-grid[data-count="1"] {
@@ -893,18 +921,52 @@ button, input, select, textarea {
 
 /* ==================== FLOATING CONTROL DOCK ==================== */
 .msc-dock-wrap {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 14px;
+  position: relative;
+  flex: 0 0 auto;
   z-index: 30;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  padding: 0 10px;
+  padding: 10px 0 0;
   pointer-events: none;
 }
+
+.msc-connection-status {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 70;
+  max-width: calc(100% - 24px);
+  padding: 9px 14px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.96);
+  color: #221506;
+  font-size: 12.5px;
+  font-weight: 800;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.msc-connection-status[hidden] { display: none; }
+.msc-connection-status.is-reconnected { background: var(--emerald); color: #FFFFFF; }
+.msc-connection-spinner { width: 12px; height: 12px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: mscSpin .8s linear infinite; }
+.msc-connection-status.is-reconnected .msc-connection-spinner { animation: none; border: 0; }
+.msc-connection-status.is-reconnected .msc-connection-spinner::before { content: '✓'; }
+@keyframes mscSpin { to { transform: rotate(360deg); } }
+
+:root[data-theme="light"] .msc-card { background: linear-gradient(180deg, #FFFFFF 0%, #F8FBFB 100%); }
+:root[data-theme="light"] .msc-preview-frame,
+:root[data-theme="light"] .msc-tile { background: radial-gradient(circle at 50% 35%, #163541 0%, #071217 80%); }
+:root[data-theme="light"] .msc-preview-status-pill,
+:root[data-theme="light"] .msc-media-toggle,
+:root[data-theme="light"] .msc-tile-name-badge { color: #F8FAFC; }
+:root[data-theme="light"] .msc-role-btn.is-active,
+:root[data-theme="light"] .msc-btn-save-notes,
+:root[data-theme="light"] .msc-btn-whatsapp { color: #065F46; }
 
 .msc-reactions-popover {
   pointer-events: auto;
@@ -1369,6 +1431,11 @@ button, input, select, textarea {
     width: min(360px, 100vw);
     box-shadow: -16px 0 48px rgba(0, 0, 0, 0.75);
   }
+
+  .msc-conference { height: calc(100dvh - 66px); min-height: 0; }
+  .msc-stage-area { min-height: 0; }
+  .msc-video-grid { align-content: start; grid-auto-rows: minmax(220px, 1fr); }
+  .msc-dock { max-height: 128px; overflow-y: auto; }
 }
 
 @media (max-width: 640px) {
@@ -1421,9 +1488,7 @@ button, input, select, textarea {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .msc-stage-area {
-    padding: 10px 10px 140px;
-  }
+  .msc-stage-area { padding: 10px; }
 
   .msc-video-grid {
     grid-template-columns: minmax(0, 1fr);

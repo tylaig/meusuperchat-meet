@@ -40,7 +40,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/meet/msc-meet-room.css?v=20261023d" />
+  <link rel="stylesheet" href="/meet/msc-meet-room.css?v=20261025a" />
 </head>
 <body>
   <!-- ==================== EXECUTIVE HEADER ==================== -->
@@ -79,6 +79,10 @@
     </div>
 
     <div class="msc-header-actions">
+      <button type="button" class="msc-btn-action msc-theme-toggle" id="btn-theme-toggle" onclick="window.MSCMeet.toggleTheme()" aria-label="Alternar para tema claro" aria-pressed="false">
+        <span id="theme-toggle-icon" aria-hidden="true">☀️</span>
+        <span id="theme-toggle-label">Tema Claro</span>
+      </button>
       <button type="button" class="msc-btn-action" id="btn-copy-invite" onclick="window.MSCMeet.copyInviteLink()">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         <span>Copiar Link</span>
@@ -233,6 +237,10 @@
 
   <!-- ==================== STAGE 2: ACTIVE CONFERENCE ROOM ==================== -->
   <section id="stage-conference" class="msc-conference" aria-label="Sala de conferência ativa">
+    <div id="connection-status" class="msc-connection-status" role="status" aria-live="assertive" hidden>
+      <span class="msc-connection-spinner" aria-hidden="true"></span>
+      <span id="connection-status-text">Reconectando à sala…</span>
+    </div>
     <div class="msc-stage-area">
       <div class="msc-stage-toolbar">
         <div class="msc-room-live-pill">
@@ -404,6 +412,7 @@
       wsUrl: <%= raw(@livekit_ws_url.to_json) %>,
       initialRole: <%= raw(initial_role.to_json) %>,
       initialName: <%= raw(initial_name.to_json) %>,
+      hostKey: <%= raw(params[:host_key].to_s.to_json) %>,
       tokenEndpoint: <%= raw("/public/api/v1/meetings/#{ERB::Util.url_encode(@room_uid)}/token".to_json) %>,
       stateEndpoint: <%= raw("/public/api/v1/meetings/#{ERB::Util.url_encode(@room_uid)}/state".to_json) %>,
       notesEndpoint: <%= raw("/public/api/v1/meetings/#{ERB::Util.url_encode(@room_uid)}/notes".to_json) %>,
@@ -411,6 +420,6 @@
       initialState: <%= raw(meeting_state.to_json) %>
     };
   </script>
-  <script src="/meet/msc-meet-room.js?v=20261023d"></script>
+  <script src="/meet/msc-meet-room.js?v=20261025a"></script>
 </body>
 </html>

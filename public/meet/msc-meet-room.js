@@ -36,7 +36,9 @@
       : [],
     sharedNotes: (CFG.initialState && CFG.initialState.shared_notes) || '',
     raisedHands: {},
-    notesDebounce: null
+    notesDebounce: null,
+    theme: 'dark',
+    reconnecting: false
   };
 
   function $(id) {
@@ -52,6 +54,35 @@
     showToast._t = setTimeout(function () {
       el.classList.remove('is-visible');
     }, 3200);
+  }
+
+  function preferredTheme() {
+    var saved = null;
+    try { saved = window.localStorage.getItem('msc-meet-theme'); } catch (e) {}
+    if (saved === 'light' || saved === 'dark') return saved;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  }
+
+  function applyTheme(theme) {
+    state.theme = theme === 'light' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', state.theme);
+    document.documentElement.classList.toggle('dark', state.theme === 'dark');
+    var btn = $('btn-theme-toggle');
+    var icon = $('theme-toggle-icon');
+    var label = $('theme-toggle-label');
+    var lightActive = state.theme === 'light';
+    if (btn) {
+      btn.setAttribute('aria-pressed', lightActive ? 'true' : 'false');
+      btn.setAttribute('aria-label', lightActive ? 'Alternar para tema escuro' : 'Alternar para tema claro');
+    }
+    if (icon) icon.textContent = lightActive ? '🌙' : '☀️';
+    if (label) label.textContent = lightActive ? 'Tema Escuro' : 'Tema Claro';
+  }
+
+  function toggleTheme() {
+    var next = state.theme === 'light' ? 'dark' : 'light';
+    applyTheme(next);
+    try { window.localStorage.setItem('msc-meet-theme', next); } catch (e) {}
   }
 
   function computeInitials(name) {
@@ -336,7 +367,8 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           participant_name: state.name,
-          role: state.role
+          role: state.role,
+          host_key: CFG.hostKey || ''
         })
       });
       var data = await res.json();
@@ -345,6 +377,11 @@
       }
 
       state.identity = data.identity;
+      state.role = data.role === 'host' ? 'host' : 'guest';
+      selectRole(state.role);
+      if (data.requested_role === 'host' && !data.host_authorized) {
+        showToast('Acesso de anfitrião não autorizado. Entrada protegida como participante.');
+      }
 
       if (!LK || !LK.Room) {
         throw new Error('SDK WebRTC LiveKit não carregado.');
@@ -471,6 +508,20 @@
           }
         }
       })
+      .on(E.Reconnecting, function () {
+        state.reconnecting = true;
+        setConnectionStatus('reconnecting', 'Reconectando à sala…');
+        var tel = $('telemetry-status');
+        if (tel) tel.textContent = 'Reconectando';
+      })
+      .on(E.Reconnected, function () {
+        state.reconnecting = false;
+        setConnectionStatus('reconnected', 'Conexão restabelecida');
+        var tel = $('telemetry-status');
+        if (tel) tel.textContent = 'SFU Reconectado';
+        resyncPersistedState();
+        setTimeout(function () { setConnectionStatus('hidden'); }, 2600);
+      })
       .on(E.DataReceived, function (payload, participant) {
         try {
           var text = new TextDecoder().decode(payload);
@@ -481,6 +532,47 @@
       .on(E.Disconnected, function () {
         handleRoomDisconnected();
       });
+  }
+
+  function setConnectionStatus(mode, message) {
+    var banner = $('connection-status');
+    var text = $('connection-status-text');
+    if (!banner) return;
+    if (mode === 'hidden') {
+      banner.hidden = true;
+      banner.classList.remove('is-reconnected');
+      return;
+    }
+    banner.hidden = false;
+    banner.classList.toggle('is-reconnected', mode === 'reconnected');
+    if (text) text.textContent = message;
+  }
+
+  async function resyncPersistedState() {
+    if (!CFG.stateEndpoint) return;
+    try {
+      var res = await fetch(CFG.stateEndpoint, { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
+      if (!res.ok) throw new Error('state sync failed');
+      var persisted = await res.json();
+      if (typeof persisted.shared_notes === 'string') {
+        state.sharedNotes = persisted.shared_notes;
+        var ta = $('shared-notes-textarea');
+        if (ta && document.activeElement !== ta) ta.value = state.sharedNotes;
+      }
+      if (Array.isArray(persisted.agenda_items)) {
+        state.agendaItems = persisted.agenda_items;
+        renderAgendaChecklist();
+      }
+      if (Array.isArray(persisted.chat_messages)) {
+        state.chatMessages = persisted.chat_messages;
+        renderChatMessages();
+      }
+      var st = $('notes-save-status');
+      if (st) st.textContent = 'Ressincronizado após reconexão';
+      showToast('Conexão restabelecida e estado da sala sincronizado.');
+    } catch (e) {
+      showToast('Conexão restabelecida; o estado local foi preservado.');
+    }
   }
 
   function handleDataPacket(pkt, participant) {
@@ -990,6 +1082,7 @@
 
   /* ==================== BOOTSTRAP ==================== */
   document.addEventListener('DOMContentLoaded', function () {
+    applyTheme(preferredTheme());
     renderChatMessages();
     renderAgendaChecklist();
 
@@ -1027,6 +1120,7 @@
     submitChatMessage: submitChatMessage,
     saveNotesAndAgenda: saveNotesAndAgenda,
     leaveRoom: leaveRoom,
-    rejoinFromEnded: rejoinFromEnded
+    rejoinFromEnded: rejoinFromEnded,
+    toggleTheme: toggleTheme
   };
 })();

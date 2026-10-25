@@ -2,6 +2,7 @@
 
 require 'jwt'
 require 'securerandom'
+require 'openssl'
 
 class PublicBookingsController < ActionController::Base
   skip_before_action :verify_authenticity_token, raise: false
@@ -37,7 +38,8 @@ class PublicBookingsController < ActionController::Base
     appointment = find_meeting_appointment(raw_uid)
     room_uid = canonical_room_uid(raw_uid, appointment)
 
-    role = params[:role].to_s.strip.downcase == 'host' ? 'host' : 'guest'
+    requested_role = params[:role].to_s.strip.downcase == 'host' ? 'host' : 'guest'
+    role = requested_role == 'host' && meeting_host_authorized?(room_uid, appointment) ? 'host' : 'guest'
     default_name = if role == 'host'
                      appointment&.calendar_schedule&.name.presence || 'Especialista Meu Super Chat'
                    else
@@ -96,6 +98,8 @@ class PublicBookingsController < ActionController::Base
       identity: identity,
       participant_name: participant_name,
       role: role,
+      requested_role: requested_role,
+      host_authorized: role == 'host',
       role_label: role_label,
       encryption: 'TLS1.3-SRTP-E2EE',
       expires_at: Time.at(exp).utc.iso8601
@@ -306,6 +310,34 @@ class PublicBookingsController < ActionController::Base
 
   def livekit_api_secret
     ENV.fetch('LIVEKIT_API_SECRET', LIVEKIT_API_SECRET_DEFAULT)
+  end
+
+  def meeting_host_authorized?(room_uid, appointment)
+    return true if authenticated_meeting_host?
+
+    provided_key = params[:host_key].to_s.strip
+    return false if provided_key.blank?
+
+    expected_keys = []
+    metadata = appointment&.metadata.is_a?(Hash) ? appointment.metadata : {}
+    expected_keys << metadata['meet_host_key'].to_s if metadata['meet_host_key'].present?
+
+    signing_secret = ENV['MEET_HOST_AUTH_SECRET'].to_s
+    expected_keys << OpenSSL::HMAC.hexdigest('SHA256', signing_secret, room_uid) if signing_secret.present?
+
+    expected_keys.any? { |expected| secure_key_match?(provided_key, expected) }
+  end
+
+  def authenticated_meeting_host?
+    respond_to?(:current_user, true) && current_user.present?
+  rescue StandardError
+    false
+  end
+
+  def secure_key_match?(provided, expected)
+    return false if provided.blank? || expected.blank? || provided.bytesize != expected.bytesize
+
+    ActiveSupport::SecurityUtils.secure_compare(provided, expected)
   end
 
   def find_meeting_appointment(raw_uid)
